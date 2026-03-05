@@ -124,7 +124,7 @@ const invoiceRules: ExtractRule[] = [
     extract: (text, lines) => {
       // Cari index baris "Bill To" / "Kepada" lalu ambil baris berikutnya
       const labelIdx = lines.findIndex((l) =>
-        /^(?:Kepada|Tagihan\s*Kepada|Billed?\s*To|Customer|Client|Pelanggan)\s*:?\s*$/i.test(l.trim()),
+        /^(?:Kepada|Tagihan\s*Kepada|Bill(?:ed)?\s+To|Customer|Client|Pelanggan)\s*:?\s*$/i.test(l.trim()),
       );
       if (labelIdx >= 0 && labelIdx + 1 < lines.length) {
         const next = lines[labelIdx + 1].trim().replace(/\s+/g, ' ');
@@ -134,7 +134,7 @@ const invoiceRules: ExtractRule[] = [
       }
       // Fallback: inline "Kepada: PT Maju" atau label+nilai pada baris sama
       const inlinePatterns = [
-        /(?:Kepada|Tagihan\s*Kepada|Billed?\s*To|Client|Customer|Pelanggan)[:\s]+([A-Z][^\n]{2,60})/im,
+        /(?:Kepada|Tagihan\s*Kepada|Bill(?:ed)?\s+To|Client|Customer|Pelanggan)[:\s]+([A-Z][^\n]{2,60})/im,
         /(?:Yth\.?|Kepada\s*Yth\.?)[:\s]*\n?\s*([A-Z][^\n]{2,60})/im,
       ];
       for (const p of inlinePatterns) {
