@@ -121,19 +121,26 @@ const invoiceRules: ExtractRule[] = [
   },
   {
     field: 'client_name',
-    extract: (text) => {
-      const patterns = [
-        // "Bill To\nMELLY CANDRAWAN" — toleran trailing space sebelum newline
-        /(?:Kepada|Tagihan\s*Kepada|Billed?\s*To|Client|Customer|Pelanggan)[:\s]*\s*\n\s*([A-Z][^\n]{2,60})/im,
-        // Inline: "Kepada: PT Maju"
+    extract: (text, lines) => {
+      // Cari index baris "Bill To" / "Kepada" lalu ambil baris berikutnya
+      const labelIdx = lines.findIndex((l) =>
+        /^(?:Kepada|Tagihan\s*Kepada|Billed?\s*To|Customer|Client|Pelanggan)\s*:?\s*$/i.test(l.trim()),
+      );
+      if (labelIdx >= 0 && labelIdx + 1 < lines.length) {
+        const next = lines[labelIdx + 1].trim().replace(/\s+/g, ' ');
+        if (next.length > 2 && /^[A-Z]/i.test(next)) {
+          return { value: next, confidence: 0.85 };
+        }
+      }
+      // Fallback: inline "Kepada: PT Maju" atau label+nilai pada baris sama
+      const inlinePatterns = [
         /(?:Kepada|Tagihan\s*Kepada|Billed?\s*To|Client|Customer|Pelanggan)[:\s]+([A-Z][^\n]{2,60})/im,
         /(?:Yth\.?|Kepada\s*Yth\.?)[:\s]*\n?\s*([A-Z][^\n]{2,60})/im,
       ];
-      for (const p of patterns) {
+      for (const p of inlinePatterns) {
         const m = text.match(p);
         if (m?.[1]) {
           const val = m[1].trim().replace(/\s+/g, ' ');
-          // Reject jika terlihat seperti label (Company Name, Description, dll.)
           if (/^(?:Company|Description|Item|Subtotal|Total|Invoice|Receipt)/i.test(val)) continue;
           if (val.length > 2) return { value: val, confidence: 0.8 };
         }
