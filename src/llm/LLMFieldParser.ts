@@ -36,7 +36,9 @@ export class LLMFieldParser {
     fields: SchemaField[],
   ): Promise<{ extracted: Record<string, unknown>; confidence: Record<string, number> }> {
     const client = this.getClient();
-    const model = process.env.LLM_MODEL ?? 'openai/gpt-4o-mini';
+    // LLM_PARSER_MODEL untuk override. Default: arcee-ai (free, reliable untuk JSON extraction).
+    // Sengaja TIDAK mengikuti LLM_MODEL karena model generic sering return empty untuk structured task.
+    const model = process.env.LLM_PARSER_MODEL ?? 'arcee-ai/trinity-large-preview:free';
 
     const fieldList = fields.map((f) => ({
       name: f.name,
@@ -71,15 +73,31 @@ Return valid JSON only, no markdown, no explanation.`;
 
     try {
       console.log(`[LLMFieldParser] Calling LLM model=${model}, ocrLen=${ocrText.length}, fields=${fields.length}`);
+      let raw = '';
+
+      // Try primary model
       const completion = await client.chat.completions.create({
         model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0,
         max_tokens: 2000,
       });
-
-      const raw = completion.choices[0]?.message?.content ?? '';
+      raw = completion.choices[0]?.message?.content ?? '';
       console.log(`[LLMFieldParser] LLM response length=${raw.length}`);
+
+      // Jika primary model return empty, retry dengan gemma-3n sebagai fallback (free)
+      if (!raw && model !== 'google/gemma-3n-e4b-it:free') {
+        console.log('[LLMFieldParser] Primary model empty — retry with google/gemma-3n-e4b-it:free');
+        const fallback = await client.chat.completions.create({
+          model: 'google/gemma-3n-e4b-it:free',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0,
+          max_tokens: 2000,
+        });
+        raw = fallback.choices[0]?.message?.content ?? '';
+        console.log(`[LLMFieldParser] Fallback response length=${raw.length}`);
+      }
+
       if (!raw) return { extracted: {}, confidence: {} };
 
       const parsed = extractJSON<{
