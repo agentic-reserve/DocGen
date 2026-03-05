@@ -7,7 +7,7 @@ description: Generate professional PDF business documents (invoices, receipts) b
 
 You are interacting with the **DocGen Engine** — a REST API that generates PDF business documents from templates and JSON data.
 
-**Base URL**: `https://docgen-production.up.railway.app`  
+**Base URL**: `https://docgen-production-503d.up.railway.app`  
 **API prefix**: `/api/v1`
 
 ## Your Job

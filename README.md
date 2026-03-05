@@ -21,10 +21,10 @@ A REST API that generates professional PDF business documents (invoices and rece
 ## Live API
 
 ```
-https://docgen-production.up.railway.app
+https://docgen-production-503d.up.railway.app
 ```
 
-Health check: `GET https://docgen-production.up.railway.app/health`
+Health check: `GET https://docgen-production-503d.up.railway.app/health`
 
 ## Prerequisites
 

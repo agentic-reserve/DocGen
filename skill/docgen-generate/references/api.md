@@ -4,7 +4,7 @@ Full endpoint documentation for DocGen Engine.
 
 ## Base URL
 
-`https://docgen-production.up.railway.app`
+`https://docgen-production-503d.up.railway.app`
 
 ## Endpoints
 
