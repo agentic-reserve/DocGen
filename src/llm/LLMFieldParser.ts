@@ -70,6 +70,7 @@ Rules:
 Return valid JSON only, no markdown, no explanation.`;
 
     try {
+      console.log(`[LLMFieldParser] Calling LLM model=${model}, ocrLen=${ocrText.length}, fields=${fields.length}`);
       const completion = await client.chat.completions.create({
         model,
         messages: [{ role: 'user', content: prompt }],
@@ -78,6 +79,7 @@ Return valid JSON only, no markdown, no explanation.`;
       });
 
       const raw = completion.choices[0]?.message?.content ?? '';
+      console.log(`[LLMFieldParser] LLM response length=${raw.length}`);
       if (!raw) return { extracted: {}, confidence: {} };
 
       const parsed = extractJSON<{
@@ -85,12 +87,14 @@ Return valid JSON only, no markdown, no explanation.`;
         confidence: Record<string, number>;
       }>(raw, { extracted: {}, confidence: {} });
 
+      console.log('[LLMFieldParser] Parsed keys:', Object.keys(parsed.extracted ?? {}));
       return {
         extracted: parsed.extracted ?? {},
         confidence: parsed.confidence ?? {},
       };
     } catch (err) {
-      console.error('[LLMFieldParser] LLM parse gagal:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[LLMFieldParser] LLM parse gagal:', msg);
       return { extracted: {}, confidence: {} };
     }
   }

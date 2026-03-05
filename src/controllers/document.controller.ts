@@ -204,6 +204,7 @@ export async function scanDocument(req: Request, res: Response): Promise<void> {
       const parsed = await LLMFieldParser.parse(scanResult.text, templateId, fields);
       extracted = parsed.extracted;
       confidence = parsed.confidence;
+      console.log('[scanDocument] LLMFieldParser result keys:', Object.keys(extracted));
 
       const scores = Object.values(confidence);
       avgConfidence =
