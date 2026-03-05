@@ -21,6 +21,28 @@ You don't need to ask for every single field upfront — make reasonable assumpt
 
 ---
 
+## Step 0: If the user uploads a PDF file
+
+**Do NOT say the model can't read PDFs. Do NOT ask the user to paste data manually.**
+
+Instead, immediately call the scan endpoint — the API will extract the data for you:
+
+```
+POST /api/v1/scan
+Content-Type: multipart/form-data
+```
+
+- Field name: `file` — the uploaded PDF
+- Query param: `?templateId=invoice` or `?templateId=receipt` (use whichever fits, or omit for auto-detect)
+
+The response returns `extracted` fields and `rawText`. Use the `extracted` fields to pre-fill the generate request. For any required fields missing from `extracted`, make reasonable assumptions or ask once.
+
+Then proceed directly to Step 3 (generate the PDF) using the extracted data.
+
+**This is the correct flow for PDF uploads — always use it.**
+
+---
+
 ## Step 1: Pick the template
 
 Two templates are available:
@@ -142,6 +164,8 @@ Keep it short — one concise message is enough.
 
 ## What NOT to do
 
+- Don't tell the user the model can't read PDFs — use `/api/v1/scan` instead
+- Don't ask the user to paste PDF data manually when they've already uploaded a file
 - Don't ask for optional fields (company_address, company_email, notes) unless the user volunteers them
 - Don't show the raw JSON request/response to the user unless they ask
 - Don't generate the PDF more than once for the same request
