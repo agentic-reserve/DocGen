@@ -15,6 +15,7 @@ RUN npm run build
 FROM node:20-slim AS production
 
 # Chromium system dependencies required by Puppeteer
+# + GraphicsMagick & Ghostscript required by pdf2pic (OCR fallback)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
@@ -52,6 +53,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lsb-release \
     wget \
     xdg-utils \
+    graphicsmagick \
+    ghostscript \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

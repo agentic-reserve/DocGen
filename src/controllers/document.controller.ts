@@ -6,6 +6,7 @@ import { PDFRenderer } from '../engine/PDFRenderer';
 import { Watermarker } from '../engine/Watermarker';
 import { LLMFieldAnalyzer } from '../llm/LLMFieldAnalyzer';
 import { LLMValidator } from '../llm/LLMValidator';
+import { LLMFieldParser } from '../llm/LLMFieldParser';
 import { PDFScanner } from '../engine/PDFScanner';
 import { DataExtractor } from '../engine/DataExtractor';
 import { GenerateRequestSchema, AnalyzeRequestSchema } from '../utils/validation';
@@ -180,20 +181,56 @@ export async function scanDocument(req: Request, res: Response): Promise<void> {
   const templateId = (req.query['templateId'] as string | undefined) ?? '_generic';
 
   try {
-    // 1. Extract teks dari PDF
+    // 1. Extract teks dari PDF (dengan OCR fallback jika image-based)
     const scanResult = await PDFScanner.scan(req.file.buffer);
 
-    // 2. Pattern matching → field values
-    const extraction = DataExtractor.extract(scanResult, templateId);
+    let extracted: Record<string, unknown>;
+    let confidence: Record<string, number>;
+    let avgConfidence: number;
+    let method: string;
+
+    if (scanResult.usedOCR) {
+      // 2a. PDF image-based → pakai LLMFieldParser untuk extract fields dari OCR text
+      console.log('[scanDocument] usedOCR=true → LLMFieldParser');
+      let fields: import('../engine/TemplateLoader').SchemaField[] = [];
+      try {
+        const schema = TemplateLoader.loadSchema(templateId);
+        fields = schema.fields;
+      } catch {
+        // templateId tidak dikenal atau _generic — kirim empty fields, LLM akan tetap extract
+        fields = [];
+      }
+
+      const parsed = await LLMFieldParser.parse(scanResult.text, templateId, fields);
+      extracted = parsed.extracted;
+      confidence = parsed.confidence;
+
+      const scores = Object.values(confidence);
+      avgConfidence =
+        scores.length > 0
+          ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100
+          : 0;
+      method = 'ocr+llm';
+    } else {
+      // 2b. PDF text-based → DataExtractor (regex)
+      console.log('[scanDocument] usedOCR=false → DataExtractor (regex)');
+      const extraction = DataExtractor.extract(scanResult, templateId);
+      extracted = extraction.extracted;
+      confidence = extraction.confidence;
+      avgConfidence = extraction.avgConfidence;
+      method = 'regex';
+    }
 
     res.status(200).json({
       success: true,
-      templateId: extraction.templateId,
-      numPages: extraction.numPages,
-      avgConfidence: extraction.avgConfidence,
-      extracted: extraction.extracted,
-      confidence: extraction.confidence,
-      rawText: extraction.rawText,
+      templateId,
+      numPages: scanResult.numPages,
+      method,
+      usedOCR: scanResult.usedOCR,
+      avgConfidence,
+      extracted,
+      confidence,
+      rawText: scanResult.text,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

@@ -1,8 +1,9 @@
 import { PDFParse } from 'pdf-parse';
+import { OCREngine } from './OCREngine';
 
 /**
  * PDFScanner: Extract raw text dari PDF buffer menggunakan pdf-parse v2.
- * Tidak butuh LLM — pure text extraction via PDF.js internals.
+ * Jika PDF berbasis gambar (rawText kosong), fallback ke OCR via OCREngine.
  */
 export class PDFScanner {
   /**
@@ -36,6 +37,20 @@ export class PDFScanner {
       fullText += (fullText ? '\n\n' : '') + pageText;
     }
 
+    // ── Fallback OCR jika PDF berbasis gambar ─────────────────────────────
+    let usedOCR = false;
+    if (!fullText.trim()) {
+      console.log('[PDFScanner] rawText kosong — fallback ke OCR...');
+      try {
+        fullText = await OCREngine.extractText(pdfBuffer);
+        usedOCR = true;
+        console.log(`[PDFScanner] OCR selesai, ${fullText.length} chars extracted`);
+      } catch (err) {
+        console.error('[PDFScanner] OCR gagal:', err);
+        fullText = '';
+      }
+    }
+
     // Extract metadata PDF jika ada
     let info: PDFScanResult['info'] = {};
     try {
@@ -58,6 +73,7 @@ export class PDFScanner {
       pages,
       numPages,
       info,
+      usedOCR,
     };
   }
 }
@@ -115,6 +131,7 @@ export interface PDFScanResult {
   lines: string[];
   pages: PageText[];
   numPages: number;
+  usedOCR: boolean;
   info: {
     title?: string;
     author?: string;
