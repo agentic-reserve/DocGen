@@ -1,0 +1,27 @@
+{
+  "templateId": "receipt",
+  "version": "1.0",
+  "fields": [
+    { "name": "receipt_number",  "required": true,  "type": "string" },
+    { "name": "receipt_date",    "required": true,  "type": "string", "format": "date" },
+    { "name": "payer_name",      "required": true,  "type": "string" },
+    { "name": "payer_address",   "required": false, "type": "string" },
+    { "name": "payment_method",  "required": false, "type": "string" },
+    { "name": "company_name",    "required": false, "type": "string" },
+    { "name": "company_address", "required": false, "type": "string" },
+    {
+      "name": "items",
+      "required": true,
+      "type": "array",
+      "items": {
+        "description": "string",
+        "qty": "number",
+        "unit_price": "number"
+      }
+    },
+    { "name": "subtotal", "required": true,  "type": "number" },
+    { "name": "tax",      "required": false, "type": "number" },
+    { "name": "total",    "required": true,  "type": "number" },
+    { "name": "notes",    "required": false, "type": "string" }
+  ]
+}
