@@ -105,6 +105,9 @@ export async function generateDocxTemplate(req: Request, res: Response): Promise
     const generatedBuffer = generatedZip.generate({ type: 'nodebuffer' });
 
     // 3. Convert DOCX to HTML
+    // Gunakan mammoth untuk convert file docx ke HTML dasar
+    // Catatan: Mammoth tidak mempreserve layout asli Word secara presisi
+    // Jika user butuh presisi, sebaiknya ganti dengan engine seperti libreoffice atau PDFTron
     const mammothResult = await mammoth.convertToHtml({ buffer: generatedBuffer });
     let bodyHtml = mammothResult.value;
 
@@ -158,10 +161,23 @@ export async function generateDocxTemplate(req: Request, res: Response): Promise
             p {
               margin: 0 0 10px 0;
             }
+            .warning-note {
+               font-size: 10px;
+               color: red;
+               text-align: center;
+               margin-top: 50px;
+               border-top: 1px dashed #ccc;
+               padding-top: 10px;
+            }
           </style>
         </head>
         <body>
           ${bodyHtml}
+          
+          <div class="warning-note">
+             Disclaimer: DocGen using Mammoth HTML converter. Layout may slightly differ from the original DOCX file.
+             <br>To perfectly preserve layout, please use HTML Templates or {{ variables }} inside your Word document.
+          </div>
         </body>
       </html>
     `;
