@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-import mammoth from 'mammoth';
-import { PDFRenderer } from '../engine/PDFRenderer';
+import { LibreOfficeConverter } from '../engine/LibreOfficeConverter';
 import { Watermarker } from '../engine/Watermarker';
 import { LLMTemplateScanner } from '../llm/LLMTemplateScanner';
-import { LLMSmartReplacer } from '../llm/LLMSmartReplacer';
 
 // POST /api/v1/docx/scan
 export async function scanDocxTemplate(req: Request, res: Response): Promise<void> {
@@ -104,88 +102,11 @@ export async function generateDocxTemplate(req: Request, res: Response): Promise
     const generatedZip = doc.getZip();
     const generatedBuffer = generatedZip.generate({ type: 'nodebuffer' });
 
-    // 3. Convert DOCX to HTML
-    // Gunakan mammoth untuk convert file docx ke HTML dasar
-    // Catatan: Mammoth tidak mempreserve layout asli Word secara presisi
-    // Jika user butuh presisi, sebaiknya ganti dengan engine seperti libreoffice atau PDFTron
-    const mammothResult = await mammoth.convertToHtml({ buffer: generatedBuffer });
-    let bodyHtml = mammothResult.value;
+    // 3. Convert DOCX to PDF directly using LibreOffice
+    console.log('[generateDocxTemplate] Converting DOCX to PDF using LibreOffice...');
+    const pdfBuffer = await LibreOfficeConverter.convertToPdf(generatedBuffer);
 
-    // 3.5. Smart Replace (Pilihan 2 AI: ganti teks statis langsung)
-    // Cek apakah ada request untuk AI smart replace. Jika payload ada tapi Docxtemplater mungkin tidak ganti apa2
-    let reqOptions: any = {};
-    if (req.body.options) {
-      try {
-        reqOptions = typeof req.body.options === 'string' ? JSON.parse(req.body.options) : req.body.options;
-      } catch (e) {}
-    }
-    
-    // Auto-detect: if options.smartReplace is true, or if we want to default to true for user
-    if (reqOptions.smartReplace || Object.keys(payload).length > 0) {
-       console.log('[generateDocxTemplate] Menjalankan LLMSmartReplacer untuk mengganti teks statis...');
-       const replacements = await LLMSmartReplacer.findReplacements(bodyHtml, payload);
-       for (const r of replacements) {
-         if (r.old && r.new) {
-           console.log(`[SmartReplace] Mengganti "${r.old}" menjadi "${r.new}"`);
-           // Escape special regex chars from r.old
-           const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-           bodyHtml = bodyHtml.replace(new RegExp(escapeRegExp(r.old), 'g'), r.new);
-         }
-       }
-    }
-
-    // 4. Wrap with some styling to look like a doc
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 40px;
-              line-height: 1.6;
-              color: #333;
-            }
-            table {
-              border-collapse: collapse;
-              width: 100%;
-              margin-bottom: 20px;
-            }
-            table, th, td {
-              border: 1px solid #ccc;
-            }
-            th, td {
-              padding: 8px;
-              text-align: left;
-            }
-            p {
-              margin: 0 0 10px 0;
-            }
-            .warning-note {
-               font-size: 10px;
-               color: red;
-               text-align: center;
-               margin-top: 50px;
-               border-top: 1px dashed #ccc;
-               padding-top: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          ${bodyHtml}
-          
-          <div class="warning-note">
-             Disclaimer: DocGen using Mammoth HTML converter. Layout may slightly differ from the original DOCX file.
-             <br>To perfectly preserve layout, please use HTML Templates or {{ variables }} inside your Word document.
-          </div>
-        </body>
-      </html>
-    `;
-
-    // 5. Render HTML to PDF
-    const pdfBuffer = await PDFRenderer.render(html);
-
-    // 6. Apply Watermark (opsional, dari req.body.options)
+    // 4. Apply Watermark (opsional, dari req.body.options)
     let finalPdf = pdfBuffer;
     if (req.body.options) {
       try {
@@ -198,7 +119,7 @@ export async function generateDocxTemplate(req: Request, res: Response): Promise
       }
     }
 
-    // 7. Output PDF
+    // 5. Output PDF
     const filename = `generated-${Date.now()}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
