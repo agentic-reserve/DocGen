@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "docgen-generate": {
+      "source": "fikriaf/DocGen",
+      "sourceType": "github",
+      "computedHash": "bd54d5be224cd7a5549bda17a5e2a35c27b8d1326641de633626ce57e912b5b3"
+    },
     "express-typescript": {
       "source": "mindrally/skills",
       "sourceType": "github",

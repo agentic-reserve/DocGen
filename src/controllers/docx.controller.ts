@@ -30,7 +30,7 @@ export async function scanDocxTemplate(req: Request, res: Response): Promise<voi
     
     const fields = new Set<string>();
     for (const match of matches) {
-      const field = (match[1] || match[2]).trim();
+      const field = ((match[1] ?? match[2]) as string).trim();
       // Skip loop tags like #, /, ^ from docxtemplater syntax
       if (!field.startsWith('#') && !field.startsWith('/') && !field.startsWith('^') && field !== '') {
         fields.add(field);

@@ -28,6 +28,7 @@
     "pdf2pic": "^3.2.0",
     "pizzip": "^3.2.0",
     "puppeteer": "^24.38.0",
+    "redoc": "^2.5.2",
     "tesseract.js": "^7.0.0",
     "zod": "^4.3.6"
   },

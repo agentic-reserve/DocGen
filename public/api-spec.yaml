@@ -193,13 +193,25 @@ paths:
                   format: binary
                   description: DOCX template file
                 payload:
-                  type: string
-                  description: JSON string containing field values
-                  example: '{"invoice_no":"INV-2026-001","client_name":"John Doe"}'
+                  type: object
+                  description: JSON object containing field values to inject
+                  example:
+                    invoice_no: "INV-2026-001"
+                    client_name: "John Doe"
+                    date: "2026-03-13"
                 options:
-                  type: string
-                  description: Optional JSON string for watermark settings
-                  example: '{"watermark":{"enabled":true,"text":"DRAFT"}}'
+                  type: object
+                  description: Optional JSON object for watermark and PDF settings
+                  example:
+                    watermark:
+                      enabled: true
+                      text: "DRAFT"
+                      color: "#FF0000"
+            encoding:
+              payload:
+                contentType: application/json
+              options:
+                contentType: application/json
       responses:
         '200':
           description: PDF generated successfully
