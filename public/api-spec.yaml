@@ -86,44 +86,6 @@ paths:
         - Injects payload JSON into DOCX variables
         - Converts DOCX to PDF using LibreOffice
         - Optionally applies watermark
-        
-        ### Example (cURL)
-        ```bash
-        curl -X POST           -F "file=@template.docx"           -F "payload={\"client_name\": \"Budi\", \"total\": \"Rp 500.000\"}"           -F "options={\"filename\": \"Invoice_Budi\"}"           http://localhost:3000/api/v1/docx/generate --output result.pdf
-        ```
-        
-        ### Example (Node.js / Axios)
-        ```javascript
-        const axios = require('axios');
-        const FormData = require('form-data');
-        const fs = require('fs');
-
-        const form = new FormData();
-        form.append('file', fs.createReadStream('template.docx'));
-        
-        // Data to fill in the DOCX {{ }} placeholders
-        form.append('payload', JSON.stringify({
-          client_name: "Budi Santoso",
-          total: "Rp 500.000"
-        }));
-        
-        // Optional settings
-        form.append('options', JSON.stringify({
-          filename: "Invoice_Budi",
-          smartReplace: false,
-          watermark: {
-            enabled: true,
-            text: "DRAFT",
-            color: "#FF0000"
-          }
-        }));
-
-        axios.post('https://docgen-production-503d.up.railway.app/api/v1/docx/generate', form, {
-          responseType: 'arraybuffer' // Important to receive PDF file
-        }).then(res => {
-          fs.writeFileSync('result.pdf', res.data);
-        });
-        ```
       operationId: generateDocxTemplate
       requestBody:
         required: true
@@ -138,15 +100,28 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: DOCX template file (e.g., invoice_template.docx)
+                  description: DOCX template file (e.g., Master_Caesar.docx)
                 payload:
                   type: string
                   description: JSON string containing field values to inject
                   example: |
                     {
-                      "invoice_no": "INV-2026-001",
-                      "client_name": "John Doe",
-                      "date": "2026-03-13"
+                      "invoice_no": "INV-2026-MCT999",
+                      "invoice_date": "15 Maret 2026",
+                      "due_date": "20 Maret 2026",
+                      "client_name": "PT. Budi Sempurna",
+                      "client_address": "Gedung Cyber, Lt 2, Jakarta Selatan",
+                      "client_number": "+62 812 3456 7890",
+                      "item_name": "Pengembangan Sistem Integrasi API Backend",
+                      "item_quantity": "1",
+                      "item_price_per_unit": "50.000.000",
+                      "item_amount": "50.000.000",
+                      "payment_bank": "BCA",
+                      "payment_name_bank": "ANTON SUPRIADI",
+                      "number_bank": "1234567890",
+                      "summary_subtotal": "50.000.000",
+                      "summary_vat": "5.500.000",
+                      "total_due": "55.500.000"
                     }
                 options:
                   type: string
