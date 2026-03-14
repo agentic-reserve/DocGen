@@ -155,10 +155,32 @@ export async function generateDocxTemplate(req: Request, res: Response): Promise
       }
     }
 
-    // 5. Output PDF
-    const filename = `generated-${Date.now()}.pdf`;
+    // 5. Output PDF (Pemberian Nama File Otomatis)
+    let rawFilename = `generated-${Date.now()}`;
+    
+    // Cek jika user memberikan opsi filename
+    if (reqOptions?.filename) {
+      rawFilename = reqOptions.filename;
+    } 
+    // Cek field payload populer untuk nama file
+    else if (payload.invoice_no || payload.invoice_number || payload.no_invoice) {
+      const invString = String(payload.invoice_no || payload.invoice_number || payload.no_invoice);
+      const clientString = payload.client_name || payload.nama_client || payload.nama_klien ? `-${payload.client_name || payload.nama_client || payload.nama_klien}` : '';
+      rawFilename = `Invoice_${invString}${clientString}`;
+    }
+    else if (payload.client_name || payload.nama_client || payload.nama_klien || payload.nama) {
+      rawFilename = `Document_${String(payload.client_name || payload.nama_client || payload.nama_klien || payload.nama)}`;
+    }
+
+    // Bersihkan nama file agar aman dipakai sebagai header HTTP (hilangkan karakter aneh/spasi menjadi underscore)
+    let safeFilename = rawFilename.replace(/[^a-zA-Z0-9_-]/g, '_');
+    // Jika user sudah mengetik .pdf di opsinya, jangan di-double
+    if (!safeFilename.toLowerCase().endsWith('.pdf')) {
+       safeFilename += '.pdf';
+    }
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Length', finalPdf.length);
     res.status(200).send(finalPdf);
   } catch (err) {
