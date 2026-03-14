@@ -12,7 +12,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Static files for API documentation
-const publicPath = path.join(__dirname, 'public');
+import fs from 'fs';
+let publicPath = path.join(__dirname, 'public');
+if (!fs.existsSync(publicPath)) {
+  publicPath = path.join(__dirname, '../public');
+}
 console.log('[Static] Public path:', publicPath);
 
 app.use(express.static(publicPath));
@@ -40,7 +44,7 @@ app.get('/health', (_req, res) => {
 
 // API Documentation (ReDoc)
 app.get('/docs', (_req, res) => {
-  const docsPath = path.join(__dirname, 'public/docs.html');
+  const docsPath = path.join(publicPath, 'docs.html');
   res.sendFile(docsPath);
 });
 
