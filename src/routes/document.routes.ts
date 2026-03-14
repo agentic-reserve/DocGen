@@ -1,9 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import {
-  generateDocument,
-  getFields,
-  listTemplates,
   analyzeWithLLM,
   scanDocument,
 } from '../controllers/document.controller';
@@ -11,24 +8,6 @@ import { scanDocxTemplate, generateDocxTemplate } from '../controllers/docx.cont
 import { uploadPDF, uploadDocx } from '../middleware/upload';
 
 const router = Router();
-
-/**
- * POST /api/v1/generate
- * Generate dokumen PDF dari template + data JSON.
- */
-router.post('/generate', generateDocument);
-
-/**
- * GET /api/v1/fields/:templateId
- * Dapatkan field list dari template tertentu.
- */
-router.get('/fields/:templateId', getFields);
-
-/**
- * GET /api/v1/templates
- * List semua template yang tersedia.
- */
-router.get('/templates', listTemplates);
 
 /**
  * POST /api/v1/analyze

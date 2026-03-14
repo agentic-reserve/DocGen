@@ -82,45 +82,7 @@ export async function generateDocument(req: Request, res: Response): Promise<voi
   }
 }
 
-// ── GET /api/v1/fields/:templateId ────────────────────────────────────────
-
-export async function getFields(req: Request, res: Response): Promise<void> {
-  const templateId = req.params['templateId'] as string;
-
-  try {
-    const schema = TemplateLoader.loadSchema(templateId);
-    const scannedFields = FieldScanner.scanById(templateId);
-
-    res.status(200).json({
-      success: true,
-      templateId,
-      version: schema.version,
-      fields: schema.fields,
-      scannedPlaceholders: scannedFields,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-
-    if (message.includes('tidak ditemukan')) {
-      res.status(404).json({ success: false, error: message });
-      return;
-    }
-
-    console.error('[getFields] Error:', err);
-    res.status(500).json({ success: false, error: message });
-  }
-}
-
-// ── GET /api/v1/templates ─────────────────────────────────────────────────
-
-export async function listTemplates(_req: Request, res: Response): Promise<void> {
-  try {
-    const templates = TemplateLoader.listTemplates();
-    res.status(200).json({ success: true, templates });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Gagal list templates' });
-  }
-}
+// ── Dihapus (Sistem HTML sudah deprecated) ──────────────────────────────
 
 // ── POST /api/v1/analyze ──────────────────────────────────────────────────
 
