@@ -2,14 +2,13 @@ openapi: 3.0.3
 info:
   title: DocGen Engine API
   description: |
-    REST API for generating PDF business documents from templates and JSON data.
+    REST API for generating PDF business documents from DOCX templates and JSON data.
     
     ### Features
-    - Generate PDF from HTML templates
     - Scan DOCX templates to detect fields
     - Generate PDF from DOCX with data injection
-    - LLM-powered field mapping and validation
     - Watermark support
+    - Scan PDF files to extract structured data
   version: 1.0.0
   contact:
     name: DocGen Support
@@ -21,106 +20,12 @@ servers:
     description: Development Server
 
 tags:
-  - name: Templates
-    description: Template management endpoints
   - name: Generation
     description: Document generation endpoints
   - name: Scanning
     description: Document scanning and field extraction
-  - name: Analysis
-    description: LLM-powered analysis endpoints
 
 paths:
-  /templates:
-    get:
-      tags:
-        - Templates
-      summary: List all available templates
-      description: Returns a list of all document templates available in the system.
-      operationId: listTemplates
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  templates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-
-  /fields/{templateId}:
-    get:
-      tags:
-        - Templates
-      summary: Get fields for a template
-      description: Returns the list of fields required by a specific template.
-      operationId: getFields
-      parameters:
-        - name: templateId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: invoice
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  fields:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TemplateField'
-        '404':
-          description: Template not found
-
-  /generate:
-    post:
-      tags:
-        - Generation
-      summary: Generate PDF from template
-      description: |
-        Generate a PDF document by injecting JSON data into a template.
-        
-        The template must be one of the available templates (invoice, receipt).
-      operationId: generateDocument
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GenerateRequest'
-      responses:
-        '200':
-          description: PDF generated successfully
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-        '400':
-          description: Validation error
-        '404':
-          description: Template not found
-        '422':
-          description: Missing required fields
-
   /docx/scan:
     post:
       tags:
@@ -174,8 +79,7 @@ paths:
         Upload a DOCX template and inject JSON data to generate a PDF.
         
         - Injects payload JSON into DOCX variables
-        - Converts DOCX to HTML
-        - Renders HTML to PDF
+        - Converts DOCX to PDF using LibreOffice
         - Optionally applies watermark
       operationId: generateDocxTemplate
       requestBody:
@@ -195,11 +99,12 @@ paths:
                 payload:
                   type: string
                   description: JSON string containing field values to inject
-                  description: JSON object containing field values to inject
-                  example:
-                    invoice_no: "INV-2026-001"
-                    client_name: "John Doe"
-                    date: "2026-03-13"
+                  example: |
+                    {
+                      "invoice_no": "INV-2026-001",
+                      "client_name": "John Doe",
+                      "date": "2026-03-13"
+                    }
                 options:
                   type: string
                   description: JSON string for options (smartReplace, filename, watermark)
@@ -212,11 +117,6 @@ paths:
                         "text": "LUNAS"
                       }
                     }
-            encoding:
-              payload:
-                contentType: application/json
-              options:
-                contentType: application/json
       responses:
         '200':
           description: PDF generated successfully
@@ -272,107 +172,3 @@ paths:
                     type: object
                   confidence:
                     type: object
-
-  /analyze:
-    post:
-      tags:
-        - Analysis
-      summary: Analyze data with LLM
-      description: |
-        Use LLM for smart field mapping and semantic validation.
-        
-        Automatically maps input JSON keys to template field names even if they don't match exactly.
-      operationId: analyzeWithLLM
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - templateId
-                - data
-              properties:
-                templateId:
-                  type: string
-                  example: invoice
-                data:
-                  type: object
-                  example:
-                    customer_name: PT Maju Jaya
-                    total: 5000000
-      responses:
-        '200':
-          description: Analysis completed
-          content:
-            application/json:
-              schema:
-                type: object
-
-components:
-  schemas:
-    TemplateField:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-          enum: [string, number, date, array]
-        required:
-          type: boolean
-        format:
-          type: string
-        description:
-          type: string
-
-    GenerateRequest:
-      type: object
-      required:
-        - templateId
-        - data
-      properties:
-        templateId:
-          type: string
-          enum: [invoice, receipt]
-          example: invoice
-        data:
-          type: object
-          description: Key-value pairs for template fields
-          example:
-            invoice_number: INV-2026-001
-            client_name: PT Maju Jaya
-            items:
-              - description: Service A
-                qty: 1
-                unit_price: 1000000
-        options:
-          type: object
-          properties:
-            useLLM:
-              type: boolean
-              default: false
-              description: Enable LLM for field mapping
-            watermark:
-              $ref: '#/components/schemas/WatermarkOptions'
-
-    WatermarkOptions:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        text:
-          type: string
-          default: DRAFT
-        opacity:
-          type: number
-          default: 0.3
-        color:
-          type: string
-          default: '#FF0000'
-        angle:
-          type: number
-          default: -45
-        fontSize:
-          type: number
-          default: 80
