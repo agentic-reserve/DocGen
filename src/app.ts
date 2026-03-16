@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import cors from 'cors';
 import documentRoutes from './routes/document.routes';
@@ -6,6 +7,22 @@ import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
+
+// Initialize Sentry
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.SENTRY_ENV ?? 'development',
+  enabled: !!process.env.SENTRY_DSN,
+  
+  // Performance Monitoring
+  tracesSampleRate: process.env.SENTRY_ENV === 'production' ? 0.1 : 1.0,
+  
+  // Error sampling
+  sampleRate: 1.0,
+});
+
+// Sentry Express integration (must be after app initialization)
+Sentry.setupExpressErrorHandler(app);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 
